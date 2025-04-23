@@ -11,16 +11,26 @@ var options = new DefaultAzureCredentialOptions
     ExcludeWorkloadIdentityCredential = true,
     TenantId = config["tenantid"]
 };
-var connectionString = config["connectionString"];
+var connectionString = config["connectionString"] ?? throw new InvalidOperationException("Connection string is missing.");
 AgentsClient client = new AgentsClient(connectionString, new DefaultAzureCredential(options));
 
 // create Agent
-Response<Agent> agentResponse = await client.CreateAgentAsync(
+Agent agentMathTutor;
+Response<PageableList<Agent>> agents = await client.GetAgentsAsync();
+if (agents.Value.Data.AsEnumerable().Any(a => a.Name == "Math Tutor"))
+{
+    agentMathTutor = (await client.GetAgentAsync(agents.Value.First(a => a.Name == "Math Tutor").Id)).Value;
+}
+else
+{
+    Response<Agent> agentResponse = await client.CreateAgentAsync(
     model: "gpt-4o-mini",
     name: "Math Tutor",
     instructions: "You are a personal math tutor. Write and run code to answer math questions.",
     tools: [new CodeInterpreterToolDefinition()]);
-Agent agentMathTutor = agentResponse.Value;
+    agentMathTutor = agentResponse.Value;
+}
+
 Response<AgentThread> threadResponse = await client.CreateThreadAsync();
 AgentThread thread = threadResponse.Value;
 
@@ -42,14 +52,14 @@ ThreadMessage agentMessage = agentMessageResponse.Value;
 Response<ThreadRun> runResponse = await client.CreateRunAsync(
     thread.Id,
     assistantId: agentMathTutor.Id
-    , additionalInstructions: "You are working in FREE TIER EXPERIENCE mode, every user has premium account for a short period of time. Explain detailed the steps to answer the user questions"
+    // , additionalInstructions: "You are working in FREE TIER EXPERIENCE mode, every user has premium account for a short period of time. Explain detailed the steps to answer the user questions"
     );
 ThreadRun run = runResponse.Value;
 
 // wait for the response
 do
 {
-    await Task.Delay(TimeSpan.FromMilliseconds(100));
+    await Task.Delay(TimeSpan.FromMilliseconds(10000));
     runResponse = await client.GetRunAsync(thread.Id, runResponse.Value.Id);
     Console.WriteLine($"Run status: {runResponse.Value.Status}");
 }
@@ -79,4 +89,14 @@ foreach (ThreadMessage threadMessage in messages)
         }
         Console.WriteLine();
     }
+}
+
+if (runResponse.Value.Status == RunStatus.Completed)
+{
+    Console.WriteLine("Agent run completed successfully.");
+}
+else
+{
+    Console.WriteLine($"Agent run failed with status: {runResponse.Value.Status}");
+    Console.WriteLine($"Error: {runResponse.Value.LastError?.Message}");
 }

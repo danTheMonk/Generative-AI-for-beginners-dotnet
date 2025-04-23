@@ -16,26 +16,36 @@ var options = new DefaultAzureCredentialOptions
 var connectionString = config["connectionString"];
 AgentsClient client = new AgentsClient(connectionString, new DefaultAzureCredential(options));
 
-OpenApiAnonymousAuthDetails oaiAuth = new();
-OpenApiToolDefinition parksinformationOpenApiTool = new(
-    name: "get_park_information",
-    description: "Retrieve parks information for a location",
-    spec: BinaryData.FromBytes(File.ReadAllBytes(@"./specs/parksinformationopenapi.json")),
-    auth: oaiAuth
-);
+// OpenApiAnonymousAuthDetails oaiAuth = new();
+// OpenApiToolDefinition parksinformationOpenApiTool = new(
+//     name: "get_park_information",
+//     description: "Retrieve parks information for a location",
+//     spec: BinaryData.FromBytes(File.ReadAllBytes(@"./specs/parksinformationopenapi.json")),
+//     auth: oaiAuth
+// );
 
-// create Agent
-Response<Agent> agentResponse = await client.CreateAgentAsync(
-    model: "gpt-4o-mini",
-    name: "SDK Test Agent - Vacation",
-        instructions: @"You are a travel assistant. Use the provided functions to help answer questions. 
+// retrieve/create Agent
+Agent agentTravelAssistant;
+Response<PageableList<Agent>> agents = await client.GetAgentsAsync();
+if (agents.Value.Data.AsEnumerable().Any(a => a.Name == "SDK Test Agent - Vacation"))
+{
+    agentTravelAssistant = (await client.GetAgentAsync(agents.Value.First(a => a.Name == "SDK Test Agent - Vacation").Id)).Value;
+}
+else
+{
+    Response<Agent> agentResponse = await client.CreateAgentAsync(
+        model: "gpt-4o-mini",
+        name: "SDK Test Agent - Vacation",
+            instructions: @"You are a travel assistant. Use the provided functions to help answer questions. 
 Customize your responses to the user's preferences as much as possible. Write and run code to answer user questions.",
-    tools: new List<ToolDefinition> {        
+        tools: new List<ToolDefinition> {
         CityInfo.getUserFavoriteCityTool,
         CityInfo.getWeatherAtLocationTool,
         CityInfo.getParksAtLocationTool}
-    );
-Agent agentTravelAssistant = agentResponse.Value;
+        );
+    agentTravelAssistant = agentResponse.Value;
+}
+
 Response<AgentThread> threadResponse = await client.CreateThreadAsync();
 AgentThread thread = threadResponse.Value;
 
@@ -43,7 +53,7 @@ AgentThread thread = threadResponse.Value;
 Response<ThreadMessage> userMessageResponse = await client.CreateMessageAsync(
     thread.Id,
     MessageRole.User,
-    "My name is Bruno, I want to know the weather in Seattle, and also information from the parks in the city");
+    "My name is Bruno, I want to know the weather in my favorite city, and also information from the parks in the city");
 ThreadMessage userMessage = userMessageResponse.Value;
 
 // agent task to answer the question
@@ -75,7 +85,7 @@ do
         foreach (RequiredToolCall toolCall in submitToolOutputsAction.ToolCalls)
         {
             var resolvedToolOutput = GetResolvedToolOutput(toolCall);
-            if(resolvedToolOutput is not null)
+            if (resolvedToolOutput is not null)
                 toolOutputs.Add(resolvedToolOutput);
         }
 

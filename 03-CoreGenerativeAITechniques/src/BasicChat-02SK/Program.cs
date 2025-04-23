@@ -9,14 +9,14 @@ var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 if (string.IsNullOrEmpty(githubToken))
 {
     var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
-    githubToken = config["GITHUB_TOKEN"];
+    githubToken = config["GITHUB_TOKEN"] ?? throw new InvalidOperationException("Missing GITHUB_TOKEN in user secrets. Ensure you followed the instructions to setup a GitHub Token to use GitHub Models.");
 }
 var modelId = "Phi-3.5-mini-instruct";
 var uri = "https://models.inference.ai.azure.com";
 
 
 // create client
-var client = new OpenAIClient(new ApiKeyCredential(githubToken), 
+var client = new OpenAIClient(new ApiKeyCredential(githubToken),
     new OpenAIClientOptions { Endpoint = new Uri(uri) });
 
 // Create a chat completion service

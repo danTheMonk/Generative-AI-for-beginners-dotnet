@@ -8,7 +8,7 @@ var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
 if (string.IsNullOrEmpty(githubToken))
 {
     var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
-    githubToken = config["GITHUB_TOKEN"];
+    githubToken = config["GITHUB_TOKEN"] ?? throw new Exception("GITHUB_TOKEN not found");
 }
 
 ChatOptions options = new ChatOptions

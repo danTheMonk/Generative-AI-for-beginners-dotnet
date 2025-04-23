@@ -10,7 +10,7 @@ public static class CityInfo
     public static FunctionToolDefinition getUserFavoriteCityTool = new("getUserFavoriteCity", "Gets the user's favorite city.");
 
     // This function is used to get the nickname of a city.
-    public static  string GetWeatherAtLocation(string cityName) => cityName switch
+    public static string GetWeatherAtLocation(string cityName) => cityName switch
     {
         "Seattle" => "21c",
         "Toronto" => "15c",
@@ -38,7 +38,7 @@ public static class CityInfo
     // this function is used to get the parks of a city
     public static string GetParksAtLocation(string location) => location switch
     {
-        "Seattle" => "Wild Waves Theme Park in Seattle offers roller coaster rides1. Visitors can also enjoy other attractions such as water slides, carousel rides, arcade games, and miniature golf3. Another option is Silverwood, a theme park near Coeur D'Alene with both wood and steel roller coasters5",
+        "Seattle" => "Wild Waves Theme Park in Seattle offers roller coaster rides. Visitors can also enjoy other attractions such as water slides, carousel rides, arcade games, and miniature golf3. Another option is Silverwood, a theme park near Coeur D'Alene with both wood and steel roller coasters5",
         "Toronto" => "There are several amusement parks near Toronto with roller coasters and other fun rides. Some options include Canada's Wonderland, Centreville Island Amusement Park, and the Canadian National Exhibition (CNE)",
         _ => throw new NotImplementedException()
     };

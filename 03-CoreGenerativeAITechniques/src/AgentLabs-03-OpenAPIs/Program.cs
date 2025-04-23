@@ -20,20 +20,29 @@ OpenApiAnonymousAuthDetails oaiAuth = new();
 OpenApiToolDefinition parksinformationOpenApiTool = new(
     name: "get_park_information",
     description: "Retrieve parks information for a location",
-    spec: BinaryData.FromString(parksInfoSpec), 
+    spec: BinaryData.FromString(parksInfoSpec),
     auth: oaiAuth
 );
 
-
-// create Agent
-Response<Agent> agentResponse = await client.CreateAgentAsync(
-    model: "gpt-4o-mini",
-    name: "SDK Test Agent - Vacation",
-    instructions: @"You are a travel assistant. Use the provided functions to help answer questions. 
+Agent agentTravelAssistant;
+Response<PageableList<Agent>> agents = await client.GetAgentsAsync();
+if (agents.Value.Data.AsEnumerable().Any(a => a.Name == "SDK Test Agent - Vacation - OpenAPI"))
+{
+    agentTravelAssistant = (await client.GetAgentAsync(agents.Value.First(a => a.Name == "SDK Test Agent - Vacation - OpenAPI").Id)).Value;
+}
+else
+{
+    // create Agent
+    Response<Agent> agentResponse = await client.CreateAgentAsync(
+        model: "gpt-4o-mini",
+        name: "SDK Test Agent - Vacation - OpenAPI",
+        instructions: @"You are a travel assistant. Use the provided functions to help answer questions. 
 Customize your responses to the user's preferences as much as possible. Write and run code to answer user questions.",
-    tools: new List<ToolDefinition> { parksinformationOpenApiTool }
-    );
-Agent agentTravelAssistant = agentResponse.Value;
+        tools: new List<ToolDefinition> { parksinformationOpenApiTool }
+        );
+    agentTravelAssistant = agentResponse.Value;
+}
+
 Response<AgentThread> threadResponse = await client.CreateThreadAsync();
 AgentThread thread = threadResponse.Value;
 

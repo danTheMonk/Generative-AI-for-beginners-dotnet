@@ -5,10 +5,10 @@ using Microsoft.Extensions.Configuration;
 using System.Text;
 
 var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-if(string.IsNullOrEmpty(githubToken))
+if (string.IsNullOrEmpty(githubToken))
 {
     var config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
-    githubToken = config["GITHUB_TOKEN"];
+    githubToken = config["GITHUB_TOKEN"] ?? throw new InvalidOperationException("Missing GITHUB_TOKEN in user secrets. Ensure you followed the instructions to setup a GitHub Token to use GitHub Models.");
 }
 
 IChatClient client = new ChatCompletionsClient(
